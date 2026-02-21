@@ -6,7 +6,7 @@
  */
 
 import { useState } from 'react';
-import { Shield, Lock, LogOut, Menu, X, Clock, User, Bell } from 'lucide-react';
+import { Shield, Lock, LogOut, Menu, X, Clock, User, Bell, ChevronDown } from 'lucide-react';
 import { useRKAFStore } from '@/store/RKAFStore';
 
 interface NavigationProps {
@@ -20,12 +20,13 @@ export function Navigation({ currentPage, onNavigate }: NavigationProps) {
     isAuthenticated, 
     isAdmin, 
     login, 
-    logout, 
-    state 
+    logout
   } = useRKAFStore();
   
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showRKAFDropdown, setShowRKAFDropdown] = useState(false);
+  const [showMoreDropdown, setShowMoreDropdown] = useState(false);
   
   const [showLogin, setShowLogin] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -56,17 +57,19 @@ export function Navigation({ currentPage, onNavigate }: NavigationProps) {
     }
   };
 
-  const navItems = [
-    { label: 'Home', path: 'home' },
-    { label: 'Command', path: 'command' },
-    { label: 'Units', path: 'units' },
-    { label: 'Operations', path: 'operations', requiresAuth: true, clearance: 3 },
-    { label: 'Recruitment', path: 'recruitment' },
-    { label: 'Media', path: 'media' },
-    { label: 'Archives', path: 'archives' },
+  // Dropdown groups
+  const rkafInfoItems = [
     { label: 'History', path: 'history' },
     { label: 'Organization', path: 'organization' },
     { label: 'Equipment', path: 'equipment' },
+  ];
+
+  const coreNavItems = [
+    { label: 'Home', path: 'home' },
+    { label: 'Operations', path: 'operations', requiresAuth: true },
+    { label: 'Recruitment', path: 'recruitment' },
+    { label: 'Media', path: 'media' },
+    { label: 'Archives', path: 'archives' },
   ];
 
   const authNavItems = [
@@ -76,10 +79,9 @@ export function Navigation({ currentPage, onNavigate }: NavigationProps) {
 
   const isActive = (path: string) => currentPage === path;
 
-  const canAccess = (item: typeof navItems[0]) => {
+  const canAccess = (item: any) => {
     if (!item.requiresAuth) return true;
     if (!isAuthenticated) return false;
-    if (item.clearance && !state.users.find(u => u.id === currentUser?.id)?.clearanceLevel) return false;
     return true;
   };
 
@@ -105,14 +107,43 @@ export function Navigation({ currentPage, onNavigate }: NavigationProps) {
               </div>
             </div>
 
-            {/* Desktop Navigation */}
-            <div className="hidden lg:flex items-center gap-1">
-              {navItems.map((item) => (
+            {/* Desktop Navigation - Compact with Dropdowns */}
+            <div className="hidden lg:flex items-center gap-0 flex-1 mx-6">
+              {/* RKAF Info Dropdown */}
+              <div 
+                className="relative group"
+                onMouseEnter={() => setShowRKAFDropdown(true)}
+                onMouseLeave={() => setShowRKAFDropdown(false)}
+              >
+                <button className="px-3 py-2 font-mono text-xs tracking-wider uppercase text-[#A9B3C2] hover:text-[#F4F6FA] group-hover:bg-[#BFA15A]/5 flex items-center gap-1 transition-all">
+                  RKAF Info <ChevronDown className="w-3 h-3" />
+                </button>
+                {showRKAFDropdown && (
+                  <div className="absolute top-full left-0 mt-0 w-48 bg-[#111827] border border-[#BFA15A]/30 shadow-lg z-50">
+                    {rkafInfoItems.map((item) => (
+                      <button
+                        key={item.path}
+                        onClick={() => { onNavigate(item.path); setShowRKAFDropdown(false); }}
+                        className={`w-full text-left px-4 py-2 font-mono text-xs transition-all ${
+                          isActive(item.path)
+                            ? 'text-[#BFA15A] bg-[#BFA15A]/10'
+                            : 'text-[#A9B3C2] hover:text-[#F4F6FA] hover:bg-[#BFA15A]/5'
+                        }`}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Core Nav Items */}
+              {coreNavItems.map((item) => (
                 <button
                   key={item.path}
                   onClick={() => canAccess(item) && onNavigate(item.path)}
                   disabled={!canAccess(item)}
-                  className={`px-4 py-2 font-mono text-xs tracking-wider uppercase transition-all duration-200 ${
+                  className={`px-3 py-2 font-mono text-xs tracking-wider uppercase transition-all ${
                     isActive(item.path)
                       ? 'text-[#BFA15A] bg-[#BFA15A]/10'
                       : canAccess(item)
@@ -123,32 +154,50 @@ export function Navigation({ currentPage, onNavigate }: NavigationProps) {
                   {item.label}
                 </button>
               ))}
-              
-              {isAuthenticated && authNavItems.map((item) => (
-                <button
-                  key={item.path}
-                  onClick={() => onNavigate(item.path)}
-                  className={`px-4 py-2 font-mono text-xs tracking-wider uppercase transition-all duration-200 ${
-                    isActive(item.path)
-                      ? 'text-[#BFA15A] bg-[#BFA15A]/10'
-                      : 'text-[#A9B3C2] hover:text-[#F4F6FA] hover:bg-[#BFA15A]/5'
-                  }`}
+
+              {/* More Dropdown (Authenticated + Admin) */}
+              {(isAuthenticated || isAdmin) && (
+                <div 
+                  className="relative group"
+                  onMouseEnter={() => setShowMoreDropdown(true)}
+                  onMouseLeave={() => setShowMoreDropdown(false)}
                 >
-                  {item.label}
-                </button>
-              ))}
-              
-              {isAdmin && (
-                <button
-                  onClick={() => onNavigate('admin')}
-                  className={`px-4 py-2 font-mono text-xs tracking-wider uppercase transition-all duration-200 ${
-                    isActive('admin')
-                      ? 'text-[#BFA15A] bg-[#BFA15A]/10'
-                      : 'text-[#A9B3C2] hover:text-[#F4F6FA] hover:bg-[#BFA15A]/5'
-                  }`}
-                >
-                  Admin
-                </button>
+                  <button className="px-3 py-2 font-mono text-xs tracking-wider uppercase text-[#A9B3C2] hover:text-[#F4F6FA] group-hover:bg-[#BFA15A]/5 flex items-center gap-1 transition-all">
+                    More <ChevronDown className="w-3 h-3" />
+                  </button>
+                  {showMoreDropdown && (
+                    <div className="absolute top-full right-0 mt-0 w-48 bg-[#111827] border border-[#BFA15A]/30 shadow-lg z-50">
+                      {isAuthenticated && authNavItems.map((item) => (
+                        <button
+                          key={item.path}
+                          onClick={() => { onNavigate(item.path); setShowMoreDropdown(false); }}
+                          className={`w-full text-left px-4 py-2 font-mono text-xs transition-all ${
+                            isActive(item.path)
+                              ? 'text-[#BFA15A] bg-[#BFA15A]/10'
+                              : 'text-[#A9B3C2] hover:text-[#F4F6FA] hover:bg-[#BFA15A]/5'
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                      {isAdmin && (
+                        <>
+                          {isAuthenticated && <div className="border-t border-[#BFA15A]/10" />}
+                          <button
+                            onClick={() => { onNavigate('admin'); setShowMoreDropdown(false); }}
+                            className={`w-full text-left px-4 py-2 font-mono text-xs transition-all ${
+                              isActive('admin')
+                                ? 'text-[#BFA15A] bg-[#BFA15A]/10'
+                                : 'text-[#A9B3C2] hover:text-[#F4F6FA] hover:bg-[#BFA15A]/5'
+                            }`}
+                          >
+                            Admin Panel
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
 
@@ -252,57 +301,96 @@ export function Navigation({ currentPage, onNavigate }: NavigationProps) {
         {mobileMenuOpen && (
           <div className="lg:hidden border-t border-[#BFA15A]/20 bg-[#0a0f1a]/98">
             <div className="px-4 py-4 space-y-1">
-              {navItems.map((item) => (
-                <button
-                  key={item.path}
-                  onClick={() => {
-                    if (canAccess(item)) {
+              {/* RKAF Info Section */}
+              <div className="mb-2">
+                <div className="px-4 py-1 font-mono text-xs text-[#6B7280] tracking-widest uppercase">RKAF Info</div>
+                {rkafInfoItems.map((item) => (
+                  <button
+                    key={item.path}
+                    onClick={() => {
                       onNavigate(item.path);
                       setMobileMenuOpen(false);
-                    }
-                  }}
-                  disabled={!canAccess(item)}
-                  className={`block w-full text-left px-4 py-3 font-mono text-sm tracking-wider uppercase transition-all ${
-                    isActive(item.path)
-                      ? 'text-[#BFA15A] bg-[#BFA15A]/10'
-                      : canAccess(item)
-                        ? 'text-[#A9B3C2] hover:text-[#F4F6FA] hover:bg-[#BFA15A]/5'
-                        : 'text-[#4B5563] cursor-not-allowed'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
-              {isAuthenticated && authNavItems.map((item) => (
-                <button
-                  key={item.path}
-                  onClick={() => {
-                    onNavigate(item.path);
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`block w-full text-left px-4 py-3 font-mono text-sm tracking-wider uppercase transition-all ${
-                    isActive(item.path)
-                      ? 'text-[#BFA15A] bg-[#BFA15A]/10'
-                      : 'text-[#A9B3C2] hover:text-[#F4F6FA] hover:bg-[#BFA15A]/5'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              ))}
-              {isAdmin && (
-                <button
-                  onClick={() => {
-                    onNavigate('admin');
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`block w-full text-left px-4 py-3 font-mono text-sm tracking-wider uppercase transition-all ${
-                    isActive('admin')
-                      ? 'text-[#BFA15A] bg-[#BFA15A]/10'
-                      : 'text-[#A9B3C2] hover:text-[#F4F6FA] hover:bg-[#BFA15A]/5'
-                  }`}
-                >
-                  Admin Panel
-                </button>
+                    }}
+                    className={`block w-full text-left px-4 py-2 font-mono text-sm transition-all ${
+                      isActive(item.path)
+                        ? 'text-[#BFA15A] bg-[#BFA15A]/10'
+                        : 'text-[#A9B3C2] hover:text-[#F4F6FA] hover:bg-[#BFA15A]/5'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Core Section */}
+              <div className="mb-2">
+                <div className="px-4 py-1 font-mono text-xs text-[#6B7280] tracking-widest uppercase">Core</div>
+                {coreNavItems.map((item) => (
+                  <button
+                    key={item.path}
+                    onClick={() => {
+                      if (canAccess(item)) {
+                        onNavigate(item.path);
+                        setMobileMenuOpen(false);
+                      }
+                    }}
+                    disabled={!canAccess(item)}
+                    className={`block w-full text-left px-4 py-2 font-mono text-sm transition-all ${
+                      isActive(item.path)
+                        ? 'text-[#BFA15A] bg-[#BFA15A]/10'
+                        : canAccess(item)
+                          ? 'text-[#A9B3C2] hover:text-[#F4F6FA] hover:bg-[#BFA15A]/5'
+                          : 'text-[#4B5563] cursor-not-allowed'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Authenticated Section */}
+              {(isAuthenticated || isAdmin) && (
+                <div>
+                  {isAuthenticated && (
+                    <>
+                      <div className="px-4 py-1 font-mono text-xs text-[#6B7280] tracking-widest uppercase">Authenticated</div>
+                      {authNavItems.map((item) => (
+                        <button
+                          key={item.path}
+                          onClick={() => {
+                            onNavigate(item.path);
+                            setMobileMenuOpen(false);
+                          }}
+                          className={`block w-full text-left px-4 py-2 font-mono text-sm transition-all ${
+                            isActive(item.path)
+                              ? 'text-[#BFA15A] bg-[#BFA15A]/10'
+                              : 'text-[#A9B3C2] hover:text-[#F4F6FA] hover:bg-[#BFA15A]/5'
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </>
+                  )}
+                  {isAdmin && (
+                    <>
+                      <div className="px-4 py-1 font-mono text-xs text-[#6B7280] tracking-widest uppercase mt-2">Administration</div>
+                      <button
+                        onClick={() => {
+                          onNavigate('admin');
+                          setMobileMenuOpen(false);
+                        }}
+                        className={`block w-full text-left px-4 py-2 font-mono text-sm transition-all ${
+                          isActive('admin')
+                            ? 'text-[#BFA15A] bg-[#BFA15A]/10'
+                            : 'text-[#A9B3C2] hover:text-[#F4F6FA] hover:bg-[#BFA15A]/5'
+                        }`}
+                      >
+                        Admin Panel
+                      </button>
+                    </>
+                  )}
+                </div>
               )}
             </div>
           </div>

@@ -24,8 +24,6 @@ import { useRKAFStore } from '@/store/RKAFStore';
 
 // Pages
 import { HomePage } from '@/pages/HomePage';
-import { CommandPage } from '@/pages/CommandPage';
-import { UnitsPage } from '@/pages/UnitsPage';
 import { OperationsPage } from '@/pages/OperationsPage';
 import { RecruitmentPage } from '@/pages/RecruitmentPage';
 import { MediaPage } from '@/pages/MediaPage';
@@ -96,9 +94,9 @@ function App() {
       case 'home':
         return <HomePage />;
       case 'command':
-        return <CommandPage />;
       case 'units':
-        return <UnitsPage />;
+        // Redirect to organization page
+        return <OrganizationPage />;
       case 'operations':
         return <OperationsPage />;
       case 'recruitment':
