@@ -36,6 +36,9 @@ import { AdminPage } from '@/pages/AdminPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { PrivacyPolicyPage } from '@/pages/PrivacyPolicyPage';
 import { TermsOfServicePage } from '@/pages/TermsOfServicePage';
+import { HistoryPage } from '@/pages/HistoryPage';
+import { OrganizationPage } from '@/pages/OrganizationPage';
+import { EquipmentPage } from '@/pages/EquipmentPage';
 
 function App() {
   const [booting, setBooting] = useState(true);
@@ -116,6 +119,12 @@ function App() {
         return <PrivacyPolicyPage />;
       case 'terms':
         return <TermsOfServicePage />;
+      case 'history':
+        return <HistoryPage />;
+      case 'organization':
+        return <OrganizationPage />;
+      case 'equipment':
+        return <EquipmentPage />;
       default:
         return <HomePage />;
     }
@@ -141,11 +150,27 @@ function App() {
       <main className="relative">
         {renderPage()}
       </main>
-      <footer className="py-6 px-4 lg:px-8 border-t border-[#BFA15A]/20 text-center">
+      <footer className="py-6 px-4 lg:px-8 border-t border-[#BFA15A]/20 text-center space-x-2 space-y-2 lg:space-y-0">
+        <button
+          onClick={() => handleNavigate('history')}
+          className="font-mono text-xs text-[#6B7280] hover:text-[#BFA15A]"
+        >History</button>
+        <span className="text-[#6B7280]">•</span>
+        <button
+          onClick={() => handleNavigate('organization')}
+          className="font-mono text-xs text-[#6B7280] hover:text-[#BFA15A]"
+        >Organization</button>
+        <span className="text-[#6B7280]">•</span>
+        <button
+          onClick={() => handleNavigate('equipment')}
+          className="font-mono text-xs text-[#6B7280] hover:text-[#BFA15A]"
+        >Equipment</button>
+        <span className="text-[#6B7280]">•</span>
         <button
           onClick={() => setCurrentPage('privacy')}
-          className="font-mono text-xs text-[#6B7280] hover:text-[#BFA15A] mr-4"
+          className="font-mono text-xs text-[#6B7280] hover:text-[#BFA15A]"
         >Privacy Policy</button>
+        <span className="text-[#6B7280]">•</span>
         <button
           onClick={() => setCurrentPage('terms')}
           className="font-mono text-xs text-[#6B7280] hover:text-[#BFA15A]"

@@ -64,6 +64,9 @@ export function Navigation({ currentPage, onNavigate }: NavigationProps) {
     { label: 'Recruitment', path: 'recruitment' },
     { label: 'Media', path: 'media' },
     { label: 'Archives', path: 'archives' },
+    { label: 'History', path: 'history' },
+    { label: 'Organization', path: 'organization' },
+    { label: 'Equipment', path: 'equipment' },
   ];
 
   const authNavItems = [
