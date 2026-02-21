@@ -104,11 +104,15 @@ export function AdminPage() {
     URL.revokeObjectURL(url);
   };
 
-  const filteredUsers = state.users.filter(u => 
-    u.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    u.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    u.serviceId.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredUsers = state.users.filter(u => {
+    const name = (u.displayName || u.fullName || '').toLowerCase();
+    return (
+      name.includes(searchQuery.toLowerCase()) ||
+      u.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.serviceId.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  });
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: Activity },
@@ -332,7 +336,7 @@ export function AdminPage() {
                     <div className="flex items-center gap-4">
                       <div className={`w-3 h-3 rounded-full ${user.isOnline ? 'bg-green-500' : 'bg-[#4B5563]'}`} />
                       <div>
-                        <p className="font-mono text-sm text-[#F4F6FA]">{user.fullName}</p>
+                        <p className="font-mono text-sm text-[#F4F6FA]">{user.displayName || user.fullName}</p>
                         <p className="font-mono text-xs text-[#6B7280]">{user.rank} | {user.role}</p>
                       </div>
                     </div>

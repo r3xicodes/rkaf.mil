@@ -33,6 +33,10 @@ export interface User {
   role: UserRole;
   isApproved: boolean;
   clearanceLevel: number;
+  // user-facing display name (customizable; falls back to username)
+  displayName?: string;
+  // has the user accepted the privacy policy / terms of service
+  acceptedTerms?: boolean;
   createdAt: string;
   lastActive: string;
   isOnline: boolean;

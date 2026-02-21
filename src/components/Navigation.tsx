@@ -6,7 +6,7 @@
  */
 
 import { useState } from 'react';
-import { Shield, Lock, LogOut, Menu, X, Clock, User } from 'lucide-react';
+import { Shield, Lock, LogOut, Menu, X, Clock, User, Bell } from 'lucide-react';
 import { useRKAFStore } from '@/store/RKAFStore';
 
 interface NavigationProps {
@@ -23,6 +23,9 @@ export function Navigation({ currentPage, onNavigate }: NavigationProps) {
     logout, 
     state 
   } = useRKAFStore();
+  
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   
   const [showLogin, setShowLogin] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -45,6 +48,9 @@ export function Navigation({ currentPage, onNavigate }: NavigationProps) {
     if (result.success) {
       setShowLogin(false);
       setLoginData({ username: '', password: '' });
+      if (result.user && !result.user.acceptedTerms) {
+        onNavigate('profile');
+      }
     } else {
       setLoginError(result.message);
     }
@@ -155,18 +161,68 @@ export function Navigation({ currentPage, onNavigate }: NavigationProps) {
 
               {/* Auth */}
               {isAuthenticated ? (
-                <div className="flex items-center gap-3">
-                  <div className="hidden sm:flex items-center gap-2">
-                    <User className="w-4 h-4 text-[#BFA15A]" />
-                    <span className="font-mono text-xs text-[#F4F6FA]">{currentUser?.rank}</span>
+                <div className="flex items-center gap-3 relative">
+                  {/* notifications icon placeholder */}
+                  <button className="p-2 text-[#6B7280] hover:text-[#F4F6FA]">
+                    <Bell className="w-5 h-5" />
+                  </button>
+
+                  {/* profile / dropdown */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowProfileMenu(!showProfileMenu)}
+                      className="flex items-center gap-2 p-2 text-[#6B7280] hover:text-[#F4F6FA]"
+                      title="Account"
+                    >
+                      <User className="w-5 h-5" />
+                      <span className="hidden sm:inline font-mono text-xs">
+                        {currentUser?.displayName || currentUser?.username}
+                      </span>
+                    </button>
+                    {showProfileMenu && (
+                      <div className="absolute right-0 mt-2 w-40 bg-[#111] border border-[#444] rounded shadow-lg z-50">
+                        <button
+                          onClick={() => {
+                            setShowProfileMenu(false);
+                            onNavigate('profile');
+                          }}
+                          className="w-full text-left px-4 py-2 font-mono text-xs text-[#c0c0c0] hover:bg-[#222]"
+                        >Profile</button>
+                        <button
+                          onClick={() => { setShowProfileMenu(false); setShowLogoutConfirm(true); }}
+                          className="w-full text-left px-4 py-2 font-mono text-xs text-[#c0c0c0] hover:bg-[#222]"
+                        >Sign Out</button>
+                      </div>
+                    )}
                   </div>
+
+                  {/* logout button also present for quick access */}
                   <button
-                    onClick={logout}
+                    onClick={() => setShowLogoutConfirm(true)}
                     className="p-2 text-[#6B7280] hover:text-[#EF4444] transition-colors"
                     title="Secure Logout"
                   >
                     <LogOut className="w-5 h-5" />
                   </button>
+
+                  {/* confirmation modal */}
+                  {showLogoutConfirm && (
+                    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+                      <div className="bg-[#111] p-6 rounded border border-[#444] w-80">
+                        <p className="font-mono text-sm text-[#F4F6FA] mb-4">Confirm Sign Out?</p>
+                        <div className="flex justify-end gap-4">
+                          <button
+                            onClick={() => setShowLogoutConfirm(false)}
+                            className="px-3 py-1 font-mono text-xs text-[#c0c0c0] hover:text-[#F4F6FA]"
+                          >Cancel</button>
+                          <button
+                            onClick={() => { setShowLogoutConfirm(false); logout(); onNavigate('home'); }}
+                            className="px-3 py-1 font-mono text-xs bg-[#EF4444] text-[#0a0f1a] hover:bg-[#F87171]"
+                          >Sign Out</button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <button

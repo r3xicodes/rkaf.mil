@@ -79,6 +79,8 @@ const createDefaultAdmin = (): User => ({
   role: 'admin',
   isApproved: true,
   clearanceLevel: 5,
+  displayName: DEFAULT_ADMIN.fullName,
+  acceptedTerms: true,
   createdAt: new Date().toISOString(),
   lastActive: new Date().toISOString(),
   isOnline: false,
@@ -99,6 +101,8 @@ const createEmergencyAdmin = (): User => ({
   role: 'admin',
   isApproved: true,
   clearanceLevel: 5,
+  displayName: EMERGENCY_ADMIN.fullName,
+  acceptedTerms: true,
   createdAt: new Date().toISOString(),
   lastActive: new Date().toISOString(),
   isOnline: false,
@@ -302,6 +306,13 @@ class RKAFStore {
     return this.state.users.find(u => u.id === this.state.currentUserId) || null;
   }
 
+  // Get display name for a given user id (fallback to username)
+  getDisplayName(userId: string): string {
+    const u = this.state.users.find(x => x.id === userId);
+    if (!u) return '';
+    return u.displayName || u.username;
+  }
+
   // Check if user is authenticated
   isAuthenticated(): boolean {
     return this.state.currentUserId !== null;
@@ -420,6 +431,29 @@ class RKAFStore {
     return { success: true, message: 'Login successful', user };
   }
 
+  // Mark terms as accepted for user
+  acceptTerms(userId: string): { success: boolean; message: string } {
+    const user = this.state.users.find(u => u.id === userId);
+    if (!user) return { success: false, message: 'User not found' };
+    user.acceptedTerms = true;
+    this.addLog('TERMS_ACCEPTED', `User accepted terms: ${user.username}`, userId);
+    this.saveState();
+    this.notify();
+    return { success: true, message: 'Terms accepted' };
+  }
+
+  updateEmail(userId: string, newEmail: string): { success: boolean; message: string } {
+    const user = this.state.users.find(u => u.id === userId);
+    if (!user) return { success: false, message: 'User not found' };
+    const duplicate = this.state.users.find(u => u.email === newEmail && u.id !== userId);
+    if (duplicate) return { success: false, message: 'Email already in use' };
+    user.email = newEmail;
+    this.addLog('EMAIL_CHANGED', `Email changed for: ${user.username}`, userId);
+    this.saveState();
+    this.notify();
+    return { success: true, message: 'Email updated' };
+  }
+
   // Logout
   logout(): void {
     const user = this.getCurrentUser();
@@ -465,6 +499,8 @@ class RKAFStore {
       role: 'pending',
       isApproved: false,
       clearanceLevel: 1,
+      displayName: data.fullName || data.username,
+      acceptedTerms: false,
       createdAt: new Date().toISOString(),
       lastActive: new Date().toISOString(),
       isOnline: false,
@@ -482,6 +518,44 @@ class RKAFStore {
   }
 
   // Change password
+  updateDisplayName(userId: string, newDisplay: string): { success: boolean; message: string } {
+    const user = this.state.users.find(u => u.id === userId);
+    if (!user) return { success: false, message: 'User not found' };
+    const trimmed = newDisplay.trim();
+    if (trimmed.length < 3 || trimmed.length > 24) {
+      return { success: false, message: 'Display name must be 3–24 characters' };
+    }
+    const forbidden = ['admin','system','command','rkaf'];
+    if (forbidden.includes(trimmed.toLowerCase())) {
+      return { success: false, message: 'Display name reserved' };
+    }
+    const dup = this.state.users.find(u => u.displayName?.toLowerCase() === trimmed.toLowerCase() && u.id !== userId);
+    if (dup) {
+      return { success: false, message: 'Display name already in use' };
+    }
+    user.displayName = trimmed;
+    // update past messages/posts/comments
+    this.state.messages.forEach(m => {
+      if (m.userId === userId) m.userName = trimmed || user.username;
+    });
+    this.state.posts.forEach(p => {
+      if (p.authorId === userId) p.author = trimmed || user.username;
+      p.comments.forEach(c => { if (c.authorId === userId) c.author = trimmed || user.username; });
+    });
+    this.state.logs.push({
+      id: generateId('log'),
+      userId,
+      userName: user.fullName,
+      action: 'DISPLAY_NAME_CHANGED',
+      details: `User ${user.username} changed display name to ${trimmed}`,
+      timestamp: new Date().toISOString(),
+      ipAddress: '127.0.0.1',
+    });
+    this.saveState();
+    this.notify();
+    return { success: true, message: 'Display name updated' };
+  }
+
   changePassword(userId: string, oldPassword: string, newPassword: string): { success: boolean; message: string } {
     const user = this.state.users.find(u => u.id === userId);
     if (!user) return { success: false, message: 'User not found' };
@@ -598,7 +672,7 @@ class RKAFStore {
       id: generateId('msg'),
       channelId,
       userId,
-      userName: user.fullName,
+      userName: user.displayName || user.fullName,
       userRank: user.rank,
       userRole: user.role,
       content,
@@ -659,6 +733,10 @@ class RKAFStore {
     const post: Post = {
       ...data,
       id: generateId('post'),
+      author: author.displayName || author.fullName,
+      authorId: author.id,
+      authorRank: author.rank,
+      authorRole: author.role,
       timestamp: new Date().toISOString(),
       isEdited: false,
       comments: [],
@@ -679,7 +757,7 @@ class RKAFStore {
 
     const comment: Comment = {
       id: generateId('comment'),
-      author: author.fullName,
+      author: author.displayName || author.fullName,
       authorId: author.id,
       authorRank: author.rank,
       authorRole: author.role,
@@ -856,5 +934,10 @@ export function useRKAFStore() {
     getStorageUsage: () => store.getStorageUsage(),
     haveCredentialsBeenShown: () => store.haveCredentialsBeenShown(),
     markCredentialsShown: () => store.markCredentialsShown(),
+    // new profile/terms methods
+    updateDisplayName: (uid: string, name: string) => store.updateDisplayName(uid, name),
+    updateEmail: (uid: string, email: string) => store.updateEmail(uid, email),
+    acceptTerms: (uid: string) => store.acceptTerms(uid),
+    getDisplayName: (uid: string) => store.getDisplayName(uid),
   };
 }

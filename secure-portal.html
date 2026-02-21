@@ -152,10 +152,11 @@
     <div id="banner">ROYAL KALMAR AIR FORCE — SECURE COMMAND NETWORK
       <span id="security-level">ALPHA</span>
     </div>
-    <div id="login">
+    <form id="login">
       <label>USER:<input type="text" id="user" autocomplete="off" /></label><br/>
       <label>PASS:<input type="password" id="pass" autocomplete="new-password" oncontextmenu="return false;"/></label>
-    </div>
+      <button type="submit" style="margin-top:0.4rem;">Login</button>
+    </form>
   </header>
   <nav id="nav">
     <a href="#" id="cmd">Command Center</a>
@@ -227,12 +228,29 @@
     }
     addBootLine();
 
-    // nav role locking (for demo assume commander after login)
-    document.getElementById('login').addEventListener('submit',e=>e.preventDefault());
-    document.getElementById('login').addEventListener('input',e=>{
-      const user=document.getElementById('user').value;
-      if(user.toLowerCase()==='commander') unlockAdmin();
+    // credential handling (hash protects from casual observation)
+    const validHashes = {
+      /* SHA-256 of "commander" */
+      'fc2dff6ac3e4ca52fececa9cbc19123217b572259ee9b83557fa8041381f799f': 'Commander'
+    };
+
+    async function sha256(str){
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+      return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    }
+
+    document.getElementById('login').addEventListener('submit', async e=>{
+      e.preventDefault();
+      const user = document.getElementById('user').value.trim().toLowerCase();
+      const hash = await sha256(user);
+      const role = validHashes[hash];
+      if(role) unlockRole(role);
     });
+
+    function unlockRole(role){
+      if(role==='Commander') unlockAdmin();
+    }
+
     function unlockAdmin(){
       document.getElementById('msn').classList.remove('locked');
       document.getElementById('int').classList.remove('locked');
