@@ -41,7 +41,7 @@ function App() {
   const [booting, setBooting] = useState(true);
   const [currentPage, setCurrentPage] = useState('home');
   const [showCredentials, setShowCredentials] = useState(false);
-  const { haveCredentialsBeenShown, markCredentialsShown, isAuthenticated, getCurrentUser, logout } = useRKAFStore();
+  const { haveCredentialsBeenShown, markCredentialsShown, isAuthenticated, getCurrentUser } = useRKAFStore();
 
   // Check if credentials need to be shown after boot
   useEffect(() => {
@@ -62,14 +62,14 @@ function App() {
   // ensure logged-out users cannot remain on restricted pages
   useEffect(() => {
     const restricted = ['communications','bulletin','admin','operations'];
-    if (!isAuthenticated() && restricted.includes(currentPage)) {
+    if (!isAuthenticated && restricted.includes(currentPage)) {
       setCurrentPage('home');
     }
   }, [currentPage, isAuthenticated]);
 
   // if user is authenticated but has not accepted terms, force profile page
   useEffect(() => {
-    if (isAuthenticated()) {
+    if (isAuthenticated) {
       const user = getCurrentUser();
       if (user && !user.acceptedTerms) {
         setCurrentPage('profile');
@@ -86,32 +86,6 @@ function App() {
       setCurrentPage(page);
     }
   };
-
-  // warn before unloading / navigating away while logged in
-  useEffect(() => {
-    const beforeUnload = (e: BeforeUnloadEvent) => {
-      if (isAuthenticated()) {
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
-    const onPopState = (e: PopStateEvent) => {
-      if (isAuthenticated()) {
-        const ok = confirm('You are currently logged in. Navigating back will log you out. Continue?');
-        if (!ok) {
-          window.history.pushState(null, '', window.location.href);
-        } else {
-          logout();
-        }
-      }
-    };
-    window.addEventListener('beforeunload', beforeUnload);
-    window.addEventListener('popstate', onPopState);
-    return () => {
-      window.removeEventListener('beforeunload', beforeUnload);
-      window.removeEventListener('popstate', onPopState);
-    };
-  }, [isAuthenticated, logout]);
 
   // Render current page
   const renderPage = () => {

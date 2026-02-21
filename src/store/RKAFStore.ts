@@ -907,6 +907,7 @@ export function useRKAFStore() {
     currentUser: store.getCurrentUser(),
     isAuthenticated: store.isAuthenticated(),
     isAdmin: store.isAdmin(),
+    getCurrentUser: () => store.getCurrentUser(),
     hasClearance: (level: number) => store.hasClearance(level),
     login: (u: string, p: string) => store.login(u, p),
     logout: () => store.logout(),
